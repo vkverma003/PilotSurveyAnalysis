@@ -69,3 +69,6 @@ ggplot(n, aes(x=Attribute, y = Percent, fill=factor(`Questionnaire Part`, levels
     geom_col() +
     guides(fill = guide_legend("Questionnaire Part"))+
     scale_x_discrete(guide = guide_axis(angle = 90))
+
+
+#test
