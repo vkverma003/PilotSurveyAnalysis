@@ -324,4 +324,4 @@ ggarrange(jai_format1,
           nrow = 1,
           ncol = 2)
 
-
+a
