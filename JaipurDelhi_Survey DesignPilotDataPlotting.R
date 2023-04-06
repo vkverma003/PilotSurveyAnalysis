@@ -31,18 +31,18 @@ del_busQRCode <- read_xlsx(del_QRdata, sheet = "2. Bus Pilot Survey- Phase II", 
 unique <- sort(unique(jai_bus$Mode))
 unique
 
-jai_bus$SurMode[jai_bus$Mode %in% unique[1:21]] <- "QR Code Based"
-jai_bus$SurMode[jai_bus$Mode %in% unique[22]] <- "Paper Based"
+jai_bus$SurMode[jai_bus$Mode %in% unique[1:21]] <- "QR Code"
+jai_bus$SurMode[jai_bus$Mode %in% unique[22]] <- "Paper"
 
 unique <- sort(unique(jai_metro$Mode))
 unique
 
-jai_metro$SurMode[jai_metro$Mode %in% unique[1]] <- "Paper Based"
-jai_metro$SurMode[jai_metro$Mode %in% unique[2]] <- "QR Code Based"
+jai_metro$SurMode[jai_metro$Mode %in% unique[1]] <- "Paper"
+jai_metro$SurMode[jai_metro$Mode %in% unique[2]] <- "QR Code"
 
-del_metro$SurMode <- "Paper Based"
-del_bus$SurMode <- "Paper Based"
-del_busQRCode$SurMode <- "QR Code Based"
+del_metro$SurMode <- "Paper"
+del_bus$SurMode <- "Paper"
+del_busQRCode$SurMode <- "QR Code"
 
 #3.2 Socioeconomic Information ====
 
@@ -122,6 +122,8 @@ Comb_Sociodata <- bind_rows(Delhi, Jaipur) #final socioeconomic dataset of pilot
 
 #5. Plotting socioeconomic dataset ====
 
+#5.1 With respect to Transit wise ====
+
 Gender <- Comb_Sociodata %>%
     select(Gender, SurveyMode, Transit, City) %>% 
     table() %>% 
@@ -195,6 +197,77 @@ License <- Comb_Sociodata %>%
 
 #Arranging these plots in single plot by ggpubr package
 ggarrange(Gender, AgeGroup, Education, Income, Ownership, License, 
+          labels = c("A", "B", "C", "D", "E", "F"), 
+          ncol = 2, nrow = 3)
+
+#5.2 With respect to Survey Mode wise ====
+
+Gender2 <- Comb_Sociodata %>% 
+    select(SurveyMode, Gender) %>%
+    table() %>% 
+    data.frame() %>% 
+    group_by(SurveyMode) %>%
+    mutate(Percent = Freq/sum(Freq)) %>% 
+    ggplot(aes(x=SurveyMode, y=Percent, fill = Gender)) +
+    geom_col()
+
+AgeGroup2 <- Comb_Sociodata %>% 
+    select(SurveyMode, AgeGroup) %>%
+    table() %>% 
+    data.frame() %>% 
+    group_by(SurveyMode) %>%
+    mutate(Percent = Freq/sum(Freq)) %>% 
+    ggplot(aes(x=SurveyMode, y=Percent, fill = factor(AgeGroup, levels = c("Above 60", "46-60", "26-45", "15-25", "Under 15")))) +
+    geom_col() +
+    guides(fill=guide_legend(title="Age Group")) +
+    theme_classic()
+
+Education2 <- Comb_Sociodata %>% 
+    select(SurveyMode, Education) %>%
+    table() %>% 
+    data.frame() %>% 
+    group_by(SurveyMode) %>%
+    mutate(Percent = Freq/sum(Freq)) %>% 
+    ggplot(aes(x=SurveyMode, y=Percent, fill = factor(Education, levels = c("PG or Higher", "Graduate", "Up to 12th", "Illiterate")))) +
+    geom_col() +
+    guides(fill=guide_legend(title="Education")) +
+    theme_classic()
+
+Income2 <- Comb_Sociodata %>% 
+    select(SurveyMode, Income) %>%
+    table() %>% 
+    data.frame() %>% 
+    group_by(SurveyMode) %>%
+    mutate(Percent = Freq/sum(Freq)) %>% 
+    ggplot(aes(x=SurveyMode, y=Percent, fill = factor(Income, levels = c("50001-1 Lakh", "25001-50000", "10001-25000", "10000 or Below", "Nil")))) +
+    geom_col() +
+    guides(fill=guide_legend(title="Income")) +
+    theme_classic()
+
+Ownership2 <- Comb_Sociodata %>% 
+    select(SurveyMode, Ownership) %>%
+    table() %>% 
+    data.frame() %>% 
+    group_by(SurveyMode) %>%
+    mutate(Percent = Freq/sum(Freq)) %>% 
+    ggplot(aes(x=SurveyMode, y=Percent, fill = factor(Ownership, levels = c("Both", "Car", "2 Wheeler", "None")))) +
+    geom_col() +
+    guides(fill=guide_legend(title="Ownership")) +
+    theme_classic()
+
+License2 <- Comb_Sociodata %>% 
+    select(SurveyMode, License) %>%
+    table() %>% 
+    data.frame() %>% 
+    group_by(SurveyMode) %>%
+    mutate(Percent = Freq/sum(Freq)) %>% 
+    ggplot(aes(x=SurveyMode, y=Percent, fill = factor(License, levels = c("Both", "Car", "2 Wheeler", "None")))) +
+    geom_col() +
+    guides(fill=guide_legend(title="License")) +
+    theme_classic()
+
+#Arranging these plots in single plot by ggpubr package
+ggarrange(Gender2, AgeGroup2, Education2, Income2, Ownership2, License2, 
           labels = c("A", "B", "C", "D", "E", "F"), 
           ncol = 2, nrow = 3)
 
@@ -324,4 +397,3 @@ ggarrange(jai_format1,
           nrow = 1,
           ncol = 2)
 
-a
