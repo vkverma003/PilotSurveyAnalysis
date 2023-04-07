@@ -271,7 +271,32 @@ ggarrange(Gender2, AgeGroup2, Education2, Income2, Ownership2, License2,
           labels = c("A", "B", "C", "D", "E", "F"), 
           ncol = 2, nrow = 3)
 
-#6. Survey Sampling Information ====
+
+#6. Mann-Whitney U Test to examine the Difference in Sample population
+a <- Comb_Sociodata %>% 
+    filter(SurveyMode == "Paper") %>% 
+    select(Income) %>%
+    na.omit() %>% 
+    unlist()
+
+b <- Comb_Sociodata %>% 
+    filter(SurveyMode == "QR Code") %>% 
+    select(Income) %>% 
+    na.omit() %>% 
+    unlist()
+
+# Convert the categorical data into numerical data
+sample1_numeric <- as.numeric(factor(a))
+sample2_numeric <- as.numeric(factor(b))
+
+# Perform the Mann-Whitney U test
+result <- wilcox.test(sample1_numeric, sample2_numeric)
+
+# View the result
+print(result)
+
+
+#7. Survey Sampling Information ====
 
 #For jaipur
 
