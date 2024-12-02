@@ -337,13 +337,12 @@ Comb_Samdata %>%
     table() %>% 
     data.frame() %>%
     filter(Freq > 0) %>% 
-    ggplot(aes(x=Format, y=Freq, fill=SurMode)) +
+    ggplot(aes(x = Format, y = Freq, fill = SurMode)) +
     geom_col() +
-    facet_grid(City~Transit) +
-    geom_text(aes(label= (..y..), hjust = +0.5, vjust=0.5)) +
-    labs(x="Questionnaire Formats", y = "No. of Sample Collected") +
-    guides(fill=guide_legend(title="Survey Mode"))
-
+    facet_grid(City ~ Transit) +
+    geom_text(aes(label = Freq), vjust = -0.4) + # Adjust vjust as needed
+    labs(x = "Questionnaire Formats", y = "No. of Sample Collected") +
+    guides(fill = guide_legend(title = "Survey Mode"))
 
 #7. Satisfaction and Importance Scale Presentation and Information Plots =====
 
