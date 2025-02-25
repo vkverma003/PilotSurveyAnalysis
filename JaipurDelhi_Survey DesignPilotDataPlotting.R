@@ -2,7 +2,6 @@ rm(list = ls())
 cat("\014")
 graphics.off()
 
-
 library(readxl)
 library(dplyr)
 library(tidyverse)
@@ -11,10 +10,9 @@ library(ggpubr)
 
 #1. Locating file location and reading them ====
 
-jai_data <- "D:/4. IITR/5. Data Collection/1. Until Pilot Level Survey/8. Preliminary Analysis/3. Combined/1. Jaipur PT Data.xlsx"
-del_data <- "D:/4. IITR/5. Data Collection/1. Until Pilot Level Survey/8. Preliminary Analysis/3. Combined/2a. Pilot Survey Analysis.xlsx"
-del_QRdata <- "D:/4. IITR/5. Data Collection/1. Until Pilot Level Survey/8. Preliminary Analysis/3. Combined/Delhi QR Code Data.xlsx"
-
+jai_data <- "E:/Other computers/Dept. Desktop/4. IITR/5. Data Collection/1. Until Pilot Level Survey/8. Preliminary Analysis/3. Combined/1. Jaipur PT Data.xlsx"
+del_data <- "E:/Other computers/Dept. Desktop/4. IITR/5. Data Collection/1. Until Pilot Level Survey/8. Preliminary Analysis/3. Combined/2a. Pilot Survey Analysis.xlsx"
+del_QRdata <- "E:/Other computers/Dept. Desktop/4. IITR/5. Data Collection/1. Until Pilot Level Survey/8. Preliminary Analysis/3. Combined/Delhi QR Code Data.xlsx"
 
 #2. Reading Bus and Metro dataset for both Jaipur and Metro Transit ====
 
@@ -85,44 +83,66 @@ unique <- sort(unique(del_busQRCode$`Income Category (per month)`))
 unique
 
 del_busQRCode$`Income Category (per month)`[del_busQRCode$`Income Category (per month)` %in% unique[1]] <- "Nil"
-    
-#4. Slicing the dataset for socioeconomic information ====
 
-#For Delhi
-delsocio <- del_bus[ , 63:70]
-colnames(delsocio) <- c("Gender", "AgeGroup", "Education", "Occupation", "Income", "Ownership", "License", "SurveyMode")
+#Renaming socio columns for consistent entries
+colnames(del_bus)[63:70] <- c("Gender", "AgeGroup", "Education", "Occupation", "Income", "Ownership", "License", "SurveyMode")
+del_bus$Transit <- "Bus"
+del_bus$City <- "New Delhi"
 
-delsocio2 <- del_busQRCode[ , 60:67]
-colnames(delsocio2) <- c("Gender", "AgeGroup", "Education", "Occupation", "Income", "Ownership", "License", "SurveyMode")
+colnames(del_busQRCode)[60:67] <- c("Gender", "AgeGroup", "Education", "Occupation", "Income", "Ownership", "License", "SurveyMode")
+del_busQRCode$Transit <- "Bus"
+del_busQRCode$City <- "New Delhi"
 
-Delhi <- rbind(delsocio, delsocio2)
-Delhi$Transit <- "Bus"
+colnames(del_metro)[61:68] <- c("Gender", "AgeGroup", "Education", "Occupation", "Income", "Ownership", "License", "SurveyMode")
+del_metro$Transit <- "Metro"
+del_metro$City <- "New Delhi"
 
-delsocio3 <- del_metro[ , 61:68]
-colnames(delsocio3) <- c("Gender", "AgeGroup", "Education", "Occupation", "Income", "Ownership", "License", "SurveyMode")
-delsocio3$Transit <- "Metro"
+colnames(jai_bus)[54:58] <- c("Gender", "AgeGroup", "Education", "Income", "SurveyMode")
+jai_bus$Transit <- "Bus"
+jai_bus$City <- "Jaipur"
 
-#For jaipur
+colnames(jai_metro)[53:57] <- c("Gender", "AgeGroup", "Education", "Income", "SurveyMode")
+jai_metro$Transit <- "Metro"
+jai_metro$City <- "Jaipur"
 
-jaisocio <- jai_bus[ , 54:58]
-colnames(jaisocio) <- c("Gender", "AgeGroup", "Education", "Income", "SurveyMode")
-jaisocio$Transit <- "Bus"
 
-jaisocio2 <- jai_metro[ , 53:57]
-colnames(jaisocio2) <- c("Gender", "AgeGroup", "Education", "Income", "SurveyMode")
-jaisocio2$Transit <- "Metro"
+#3.3 Survey Formats Information ====
+del_bus$Format <- "Format 2"
+del_busQRCode$Format <- "Format 2"
 
-#Combinig both Jaipur and New Delhi socioeconomic dataset
-Delhi <- rbind(Delhi, delsocio3) #combine Delhi socio data
-Delhi$City <- "New Delhi"
-Jaipur <- rbind(jaisocio, jaisocio2) #combine jaipur socio data
-Jaipur$City <- "Jaipur"
+del_metro$Format <- NA
+del_metro$Format[c(1:3, 9, 10)] <- "Format 3"
+del_metro$Format[c(4:8, 11:61)] <- "Format 2"
 
-Comb_Sociodata <- bind_rows(Delhi, Jaipur) #final socioeconomic dataset of pilot survey
+jai_bus$Format<- "Format 1"
+jai_metro$Format<- "Format 1"
+
+#4. Survey Sampling Information ====
+
+#Combinig both Jaipur and New Delhi sample infor
+Comb_Samdata <- bind_rows(del_bus[ , c(1, 70:73)], del_busQRCode[1 ,67:70], del_metro[ , c(1, 68:71)],
+                          jai_bus[ , c(58:61)], jai_metro[ , c(57:60)])
+
+Comb_Samdata %>%
+  select(-c(`Sample No`)) %>% 
+  table() %>% 
+  data.frame() %>%
+  filter(Freq > 0) %>% 
+  ggplot(aes(x = Format, y = Freq, fill = SurveyMode)) +
+  geom_col() +
+  facet_grid(City ~ Transit) +
+  geom_text(aes(label = Freq), vjust = -0.4) + # Adjust vjust as needed
+  labs(x = "Questionnaire Formats", y = "No. of Sample Collected") +
+  guides(fill = guide_legend(title = "Survey Mode"))
+
 
 #5. Plotting socioeconomic dataset ====
 
-#5.1 With respect to Transit wise ====
+#Combinig both Jaipur and New Delhi socioeconomic dataset
+Comb_Sociodata <- bind_rows(del_bus[, 63:72], del_busQRCode[, 60:69], del_metro[, 61:70],
+               jai_bus[, 54:60], jai_metro[, 53:59])
+
+#4.1 With respect to Transit wise ====
 
 Gender <- Comb_Sociodata %>%
     select(Gender, SurveyMode, Transit, City) %>% 
@@ -200,7 +220,7 @@ ggarrange(Gender, AgeGroup, Education, Income, Ownership, License,
           labels = c("A", "B", "C", "D", "E", "F"), 
           ncol = 2, nrow = 3)
 
-#5.2 With respect to Survey Mode wise ====
+#4.2 With respect to Survey Mode wise ====
 
 Gender2 <- Comb_Sociodata %>% 
     select(SurveyMode, Gender) %>%
@@ -272,7 +292,7 @@ ggarrange(Gender2, AgeGroup2, Education2, Income2, Ownership2, License2,
           ncol = 2, nrow = 3)
 
 
-#6. Mann-Whitney U Test to examine the Difference in Sample population
+#4.2.1. Mann-Whitney U Test to examine the Difference in Sample population ====
 a <- Comb_Sociodata %>% 
     filter(SurveyMode == "Paper") %>% 
     select(Income) %>%
@@ -296,128 +316,100 @@ result <- wilcox.test(sample1_numeric, sample2_numeric)
 print(result)
 
 
-#7. Survey Sampling Information ====
+#5. Satisfaction and Importance Scale Presentation and Information Plots =====
 
-#For jaipur
+del_metro$`System Infra: Parking- Space Adeqacy` <- as.numeric(del_metro$`System Infra: Parking- Space Adeqacy`)
+del_metro$`System Infra: Parking- Dist to the parking bay` <- as.numeric(del_metro$`System Infra: Parking- Dist to the parking bay`)
+del_metro$`System Infra: Parking- cost` <- as.numeric(del_metro$`System Infra: Parking- cost`)
 
-jai_bus_sam <- jai_bus[ , c(1, 58)]
-jai_bus_sam$Transit <- "Bus"
-jai_bus_sam$Format<- "Format 1"
+#5.1 With respect to the Formats ====
 
-jai_metro_sam <- jai_metro[ , c(1, 57)]
-jai_metro_sam$Transit <- "Metro"
-jai_metro_sam$Format<- "Format 1"
+del_satis_bus <- del_bus %>% 
+  filter(Format == "Format 2") %>%
+  select(`Overall Satisfaction`, Frequency:`Overall transport service`, SurveyMode) %>% 
+  pivot_longer(`Overall Satisfaction`:`Overall transport service`, names_to = "Attributes", values_to = "Rating") %>% 
+  table() %>% 
+  data.frame() %>% 
+  select(SurveyMode, Rating, Freq) %>% 
+  filter(Rating != 15) %>% 
+  group_by(SurveyMode, Rating) %>%
+  summarise(Count = sum(Freq))
 
+del_satis_qrcode = del_busQRCode %>% 
+  filter(Format == 'Format 2') %>% 
+  select(`overall satisfaction`, frequency:`Overall Satisfaction (After)`, SurveyMode) %>% 
+  pivot_longer(`overall satisfaction`:`Overall Satisfaction (After)`, names_to = 'Attributes', 
+               values_to = 'Rating') %>% 
+  table() %>% 
+  data.frame() %>% 
+  select(SurveyMode, Rating, Freq) %>% 
+  filter(Freq != 0) %>% 
+  group_by(SurveyMode, Rating) %>% 
+  summarise(Count = sum(Freq))
+  
 
-#For Delhi
-del_sam_bus <- del_bus[ , c(1, 70)]
-del_sam_bus_QRCode <- del_busQRCode[1 ,67]
+del_satis_metro <- del_metro %>% 
+  filter(Format == 'Format 2') %>%
+  select(`Overall Satisfaction`, Frequency:`Overall transport service`, SurveyMode) %>% 
+  pivot_longer(`Overall Satisfaction`:`Overall transport service`, names_to = "Attributes", values_to = "Rating") %>% 
+  table() %>% 
+  data.frame() %>% 
+  select(SurveyMode, Rating, Freq) %>% 
+  group_by(SurveyMode, Rating) %>%
+  summarise(Count = sum(Freq))
 
-del_sam_bus2 <- bind_rows(del_sam_bus, del_sam_bus_QRCode)
-del_sam_bus2$Transit <- "Bus"
-del_sam_bus2$Format <- "Format 2"
+del_format2 <- bind_rows(del_satis_bus, del_satis_metro, del_satis_qrcode) %>% 
+  group_by(SurveyMode, Rating) %>% 
+  summarise(Total = sum(Count)) %>% 
+  mutate(Percent = round(Total/sum(Total), 2), Format = "Format 2") %>% 
+  ggplot(aes(x=Rating, y=Percent)) +
+  geom_col() +
+  facet_grid(~SurveyMode)+
+  ggtitle("Format 2") +
+  labs(y= "Total Responses (Relative)")
 
-del_sam_metro <- del_metro[ , c(1, 68)]
-del_sam_metro$Format <- NA
-del_sam_metro$Format[c(1:3, 9, 10)] <- "Format 3"
-del_sam_metro$Format[c(4:8, 11:61)] <- "Format 2"
-del_sam_metro$Transit <- "Metro"
-
-
-#Combinig both Jaipur and New Delhi socioeconomic dataset
-Delhi <- bind_rows(del_sam_bus2, del_sam_metro) #combine Delhi socio data
-Delhi$City <- "New Delhi"
-Jaipur <- bind_rows(jai_bus_sam, jai_metro_sam) #combine jaipur socio data
-Jaipur$City <- "Jaipur"
-
-Comb_Samdata <- bind_rows(Delhi, Jaipur) #final socioeconomic dataset of pilot survey
-
-Comb_Samdata %>%
-    select(-c(`Sample No`, Mode)) %>% 
-    table() %>% 
-    data.frame() %>%
-    filter(Freq > 0) %>% 
-    ggplot(aes(x = Format, y = Freq, fill = SurMode)) +
-    geom_col() +
-    facet_grid(City ~ Transit) +
-    geom_text(aes(label = Freq), vjust = -0.4) + # Adjust vjust as needed
-    labs(x = "Questionnaire Formats", y = "No. of Sample Collected") +
-    guides(fill = guide_legend(title = "Survey Mode"))
-
-#7. Satisfaction and Importance Scale Presentation and Information Plots =====
-
-del_satis_bus <- del_bus[, c(32, 36:62)]
-
-del_satis_metro <- del_metro[c(4:8, 11:61) , c(30, 34:60)]
-del_satis_metro$`Overall Satisfaction` <- as.numeric(del_satis_metro$`Overall Satisfaction`)
-del_satis_metro$`System Infra: Parking- Space Adeqacy` <- as.numeric(del_satis_metro$`System Infra: Parking- Space Adeqacy`)
-
-del_satis_metro$`System Infra: Parking- Dist to the parking bay` <- as.numeric(del_satis_metro$`System Infra: Parking- Dist to the parking bay`)
-
-del_satis_metro$`System Infra: Parking- cost` <- as.numeric(del_satis_metro$`System Infra: Parking- cost`)
-
-
-jai_import_bus <- jai_bus[ , 9:38]
-
-jai_import_metro <- jai_metro[ , 8:37]
-
-
-del_satis_bus <- del_satis_bus %>% 
-    pivot_longer(1:28, names_to = "Attributes", values_to = "Rating") %>% 
+jai_import_bus <- jai_bus %>% 
+  filter(Format == 'Format 1') %>% 
+  select(`Schedule Reliability`:`Posting of security staff inside the bus or at the bus stop`, SurveyMode) %>% 
+  pivot_longer(cols = -SurveyMode, names_to = "Attributes", values_to = "Rating") %>% 
     table() %>% 
     data.frame() %>% 
-    select(Rating, Freq) %>% 
-    group_by(Rating) %>%
-    summarise(Count = sum(Freq)) %>% 
-    filter(Rating != 15)
-
-del_satis_metro <- del_satis_metro %>% 
-    pivot_longer(1:28, names_to = "Attributes", values_to = "Rating") %>% 
-    table() %>% 
-    data.frame() %>% 
-    select(Rating, Freq) %>% 
-    group_by(Rating) %>%
+    select(SurveyMode, Rating, Freq) %>% 
+    group_by(SurveyMode, Rating) %>%
     summarise(Count = sum(Freq))
 
-del_format2 <- full_join(del_satis_bus, del_satis_metro) %>% 
-    group_by(Rating) %>% 
-    summarise(Total = sum(Count)) %>% 
-    mutate(Percent = round(Total/sum(Total), 2),
-           Format = "Format 2") %>% 
-    ggplot(aes(x=Rating, y=Percent)) +
-    geom_col() +
-    ggtitle("Format 2 - Tested through Paper-based Survey") +
-    labs(y= "Total Responses (Relative)")
-
-jai_import_bus <- jai_import_bus %>% 
-    pivot_longer(1:30, names_to = "Attributes", values_to = "Rating") %>% 
+jai_import_metro <- jai_metro %>% 
+  filter(Format == 'Format 1') %>% 
+  select(`Schedule Reliability`:`Posting of security staff inside the metro or at the metro station`, SurveyMode)%>% 
+    pivot_longer(cols = -SurveyMode, names_to = "Attributes", values_to = "Rating") %>% 
     table() %>% 
     data.frame() %>% 
-    select(Rating, Freq) %>% 
-    group_by(Rating) %>%
-    summarise(Count = sum(Freq))
-
-jai_import_metro <- jai_import_metro %>% 
-    pivot_longer(1:30, names_to = "Attributes", values_to = "Rating") %>% 
-    table() %>% 
-    data.frame() %>% 
-    select(Rating, Freq) %>% 
-    group_by(Rating) %>%
+    select(SurveyMode, Rating, Freq) %>% 
+    group_by(SurveyMode, Rating) %>%
     summarise(Count = sum(Freq))
 
 jai_format1 <- full_join(jai_import_bus, jai_import_metro) %>% 
-    group_by(Rating) %>% 
+    group_by(SurveyMode, Rating) %>% 
     summarise(Total = sum(Count)) %>% 
     mutate(Percent = round(Total/sum(Total), 2),
            Format = "Format 1") %>% 
     ggplot(aes(x=Rating, y=Percent)) +
     geom_col()+
-    ggtitle("Format 1 - Tested through Paper-based Survey") +
+  facet_grid(~SurveyMode)+
+    ggtitle("Format 1") +
     labs(y= "Total Responses (Relative)")
 
 library(ggpubr)
 ggarrange(jai_format1,
           del_format2,
-          nrow = 1,
-          ncol = 2)
+          nrow = 2,
+          ncol = 1)
+
+#6. Fractional and Discrete Values Scale ====
+
+library(purrr)
+
+del_metro %>% 
+  filter(Format == 'Format 3') %>% 
+  select(`Overall Satisfaction`, Frequency:`Overall transport service`)
 
